@@ -7,14 +7,14 @@ class ScheduleNotifier extends Notifier<List<ClassBlock>> {
     return [
       ClassBlock(
         id: '1',
-        name: 'Math 101',
+        name: 'Bogs bogs',
         time: '08:00 AM',
         day: 'Mon',
         colorValue: 0xFF64B5F6, // Light Blue
       ),
       ClassBlock(
         id: '2',
-        name: 'History 202',
+        name: 'MRNL 202',
         time: '10:00 AM',
         day: 'Tue',
         colorValue: 0xFFFFB74D, // Orange
