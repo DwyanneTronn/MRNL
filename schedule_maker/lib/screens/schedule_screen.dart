@@ -80,7 +80,7 @@ class ScheduleScreen extends ConsumerWidget {
             if (isEditing)
               TextButton(
                 onPressed: () {
-                  ref.read(scheduleProvider.notifier).removeClass(classBlock.id);
+                  ref.read(scheduleProvider.notifier).deleteClass(classBlock.id);
                   Navigator.pop(context);
                 },
                 child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -129,7 +129,6 @@ class ScheduleScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final classes = ref.watch(scheduleProvider);
     final backgroundState = ref.watch(backgroundProvider);
 
     final String? displayImagePath =
@@ -176,7 +175,7 @@ class ScheduleScreen extends ConsumerWidget {
           // LAYER 2: Overlay for readability
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
             ),
           ),
           // LAYER 3: Blur Effect
@@ -301,13 +300,13 @@ class ScheduleScreen extends ConsumerWidget {
                                         Positioned(
                                           top: i * hourHeight,
                                           left: 0, right: 0,
-                                          child: Divider(color: Colors.white.withOpacity(0.2), height: 1),
+                                          child: Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
                                         ),
                                       for (var i = 0; i <= 6; i++)
                                         Positioned(
                                           left: i * dayWidth,
                                           top: 0, bottom: 0,
-                                          child: VerticalDivider(color: Colors.white.withOpacity(0.2), width: 1),
+                                          child: VerticalDivider(color: Colors.white.withValues(alpha: 0.2), width: 1),
                                         ),
 
                                       // 2. THE CLASSES
@@ -368,7 +367,7 @@ class ScheduleScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.9),
+          color: color.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(2, 2))

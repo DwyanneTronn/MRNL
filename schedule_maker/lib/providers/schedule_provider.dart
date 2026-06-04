@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/class_model.dart';
-import 'package:uuid/uuid.dart';
 
 class ScheduleNotifier extends Notifier<List<ClassBlock>> {
   @override
