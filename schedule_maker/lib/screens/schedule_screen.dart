@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,10 +24,20 @@ class ScheduleScreen extends ConsumerWidget {
   void _showClassDialog(BuildContext context, WidgetRef ref, [ClassBlock? classBlock]) {
     final isEditing = classBlock != null;
     final nameController = TextEditingController(text: classBlock?.name);
-    final timeController = TextEditingController(text: classBlock?.time);
-    final dayController = TextEditingController(text: classBlock?.day);
+    final dayController = TextEditingController(text: classBlock?.day ?? 'Mon');
     final locationController = TextEditingController(text: classBlock?.location);
+    
+    TimeOfDay startTime = classBlock != null 
+        ? TimeOfDay(hour: classBlock.startHour.toInt(), minute: ((classBlock.startHour % 1) * 60).round())
+        : const TimeOfDay(hour: 9, minute: 0);
+    
+    TimeOfDay endTime = classBlock != null
+        ? TimeOfDay(hour: classBlock.endHour.toInt(), minute: ((classBlock.endHour % 1) * 60).round())
+        : const TimeOfDay(hour: 10, minute: 30);
+
     int selectedColor = classBlock?.colorValue ?? 0xFF64B5F6;
+
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     showDialog(
       context: context,
@@ -41,13 +52,31 @@ class ScheduleScreen extends ConsumerWidget {
                   controller: nameController,
                   decoration: const InputDecoration(labelText: 'Class Name'),
                 ),
-                TextField(
-                  controller: timeController,
-                  decoration: const InputDecoration(labelText: 'Time (e.g., 9:00 AM - 10:30 AM)'),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: dayController.text,
+                  decoration: const InputDecoration(labelText: 'Day'),
+                  items: days.map((day) => DropdownMenuItem(value: day, child: Text(day))).toList(),
+                  onChanged: (val) => setState(() => dayController.text = val!),
                 ),
-                TextField(
-                  controller: dayController,
-                  decoration: const InputDecoration(labelText: 'Day (e.g., Mon, Tue, Wed)'),
+                const SizedBox(height: 16),
+                ListTile(
+                  title: const Text('Start Time'),
+                  subtitle: Text(startTime.format(context)),
+                  trailing: const Icon(Icons.access_time),
+                  onTap: () async {
+                    final picked = await showTimePicker(context: context, initialTime: startTime);
+                    if (picked != null) setState(() => startTime = picked);
+                  },
+                ),
+                ListTile(
+                  title: const Text('End Time'),
+                  subtitle: Text(endTime.format(context)),
+                  trailing: const Icon(Icons.access_time),
+                  onTap: () async {
+                    final picked = await showTimePicker(context: context, initialTime: endTime);
+                    if (picked != null) setState(() => endTime = picked);
+                  },
                 ),
                 TextField(
                   controller: locationController,
@@ -65,6 +94,7 @@ class ScheduleScreen extends ConsumerWidget {
                     0xFFFF8A65,
                     0xFFBA68C8,
                     0xFFF06292,
+                    0xFF8BC34A,
                   ].map((color) => _colorOption(color, selectedColor, (val) {
                     setState(() => selectedColor = val);
                   })).toList(),
@@ -88,13 +118,18 @@ class ScheduleScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
+                  final startDouble = startTime.hour + (startTime.minute / 60.0);
+                  final endDouble = endTime.hour + (endTime.minute / 60.0);
+                  
                   final newClass = ClassBlock(
                     id: isEditing ? classBlock.id : const Uuid().v4(),
                     name: nameController.text,
-                    time: timeController.text,
+                    time: '${startTime.format(context)} - ${endTime.format(context)}',
                     day: dayController.text,
                     location: locationController.text,
                     colorValue: selectedColor,
+                    startHour: startDouble,
+                    endHour: endDouble,
                   );
                   if (isEditing) {
                     ref.read(scheduleProvider.notifier).updateClass(newClass);
@@ -130,6 +165,7 @@ class ScheduleScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundState = ref.watch(backgroundProvider);
+    final schedule = ref.watch(scheduleProvider);
 
     final String? displayImagePath =
         backgroundState.pendingImagePath ?? backgroundState.savedImagePath;
@@ -153,14 +189,20 @@ class ScheduleScreen extends ConsumerWidget {
           // LAYER 1: Background Image
           Positioned.fill(
             child: displayImagePath != null
-                ? (displayImagePath.startsWith('http')
+                ? (displayImagePath.startsWith('http') ||
+                        displayImagePath.startsWith('blob:') ||
+                        kIsWeb
                     ? Image.network(
                         displayImagePath,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(child: Icon(Icons.error, color: Colors.white)),
                       )
                     : Image.file(
                         File(displayImagePath),
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(child: Icon(Icons.error, color: Colors.white)),
                       ))
                 : Container(
                     decoration: const BoxDecoration(
@@ -310,34 +352,19 @@ class ScheduleScreen extends ConsumerWidget {
                                         ),
 
                                       // 2. THE CLASSES
-                                      // MONDAY & THURSDAY: PHILO 13 (9:30 - 11:00)
-                                      _buildClassCard('PHILO 13', '9:30-11:00', 0, 9.5, 1.5, Colors.lightGreen, dayWidth, hourHeight), // Mon
-                                      _buildClassCard('PHILO 13', '9:30-11:00', 3, 9.5, 1.5, Colors.lightGreen, dayWidth, hourHeight), // Thu
-
-                                      // MONDAY & THURSDAY: MSYS 51 (3:30 - 5:00)
-                                      _buildClassCard('MSYS 51', '3:30-5:00', 0, 15.5, 1.5, Colors.purple.shade300, dayWidth, hourHeight),
-                                      _buildClassCard('MSYS 51', '3:30-5:00', 3, 15.5, 1.5, Colors.purple.shade300, dayWidth, hourHeight),
-
-                                      // MONDAY & THURSDAY: SocSc 13 (6:30 - 8:00)
-                                      _buildClassCard('SocSc 13', '6:30-8:00', 0, 18.5, 1.5, Colors.orange.shade300, dayWidth, hourHeight),
-                                      _buildClassCard('SocSc 13', '6:30-8:00', 3, 18.5, 1.5, Colors.orange.shade300, dayWidth, hourHeight),
-
-                                      // TUESDAY & FRIDAY: MSYS 42 (12:30 - 2:00)
-                                      _buildClassCard('MSYS 42', '12:30-2:00', 1, 12.5, 1.5, Colors.amber.shade300, dayWidth, hourHeight),
-                                      _buildClassCard('MSYS 42', '12:30-2:00', 4, 12.5, 1.5, Colors.amber.shade300, dayWidth, hourHeight),
-
-                                      // TUESDAY & FRIDAY: ITMGT 46 (3:30 - 5:00)
-                                      _buildClassCard('ITMGT 46', '3:30-5:00', 1, 15.5, 1.5, Colors.green.shade200, dayWidth, hourHeight),
-                                      _buildClassCard('ITMGT 46', '3:30-5:00', 4, 15.5, 1.5, Colors.green.shade200, dayWidth, hourHeight),
-
-                                      // WEDNESDAY: NSTP 12 (8:00 - 12:00)
-                                      _buildClassCard('NSTP 12', '8:00-12:00', 2, 8.0, 4.0, Colors.pink.shade100, dayWidth, hourHeight),
-
-                                      // FRIDAY: ISCS 30.13 (11:00 - 12:00)
-                                      _buildClassCard('ISCS 30.13', '11:00-12:00', 4, 11.0, 1.0, Colors.red.shade300, dayWidth, hourHeight),
-
-                                      // SATURDAY: CSCI 111 (11:00 - 2:00)
-                                      _buildClassCard('CSCI 111', '11:00-2:00', 5, 11.0, 3.0, Colors.teal.shade300, dayWidth, hourHeight),
+                                      ...schedule.map((classBlock) {
+                                        final dayIndex = days.indexOf(classBlock.day);
+                                        if (dayIndex == -1) return const SizedBox.shrink();
+                                        
+                                        return _buildClassCard(
+                                          context,
+                                          ref,
+                                          classBlock,
+                                          dayIndex,
+                                          dayWidth,
+                                          hourHeight,
+                                        );
+                                      }),
                                     ],
                                   ),
                                 );
@@ -358,36 +385,39 @@ class ScheduleScreen extends ConsumerWidget {
   }
 
   // Helper Function to calculate size and position
-  Widget _buildClassCard(String title, String time, int dayIndex, double startHour, double duration, Color color, double width, double hourHeight) {
+  Widget _buildClassCard(BuildContext context, WidgetRef ref, ClassBlock classBlock, int dayIndex, double width, double hourHeight) {
     return Positioned(
       left: dayIndex * width + 2, // +2 for spacing
-      top: (startHour - 8) * hourHeight, // Subtract 8 because grid starts at 8 AM
+      top: (classBlock.startHour - 8) * hourHeight, // Subtract 8 because grid starts at 8 AM
       width: width - 4, // -4 for spacing
-      height: (duration * hourHeight) - 2,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(2, 2))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87),
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              time,
-              style: const TextStyle(fontSize: 9, color: Colors.black87),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+      height: (classBlock.duration * hourHeight) - 2,
+      child: GestureDetector(
+        onTap: () => _showClassDialog(context, ref, classBlock),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Color(classBlock.colorValue).withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(2, 2))
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                classBlock.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black87),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                classBlock.time,
+                style: const TextStyle(fontSize: 9, color: Colors.black87),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

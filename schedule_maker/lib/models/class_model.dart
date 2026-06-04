@@ -1,10 +1,12 @@
 class ClassBlock {
   final String id;
   final String name;
-  final String time;
+  final String time; // Display string like "9:00 AM - 10:30 AM"
   final String day;
   final String? location;
   final int colorValue;
+  final double startHour; // e.g., 9.5 for 9:30 AM
+  final double endHour;   // e.g., 11.0 for 11:00 AM
 
   ClassBlock({
     required this.id,
@@ -13,7 +15,11 @@ class ClassBlock {
     required this.day,
     this.location,
     required this.colorValue,
+    required this.startHour,
+    required this.endHour,
   });
+
+  double get duration => endHour - startHour;
 
   ClassBlock copyWith({
     String? id,
@@ -22,6 +28,8 @@ class ClassBlock {
     String? day,
     String? location,
     int? colorValue,
+    double? startHour,
+    double? endHour,
   }) {
     return ClassBlock(
       id: id ?? this.id,
@@ -30,6 +38,8 @@ class ClassBlock {
       day: day ?? this.day,
       location: location ?? this.location,
       colorValue: colorValue ?? this.colorValue,
+      startHour: startHour ?? this.startHour,
+      endHour: endHour ?? this.endHour,
     );
   }
 }
