@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/class_model.dart';
+import 'package:uuid/uuid.dart';
 
 class ScheduleNotifier extends Notifier<List<ClassBlock>> {
   @override
@@ -10,6 +11,7 @@ class ScheduleNotifier extends Notifier<List<ClassBlock>> {
         name: 'Bogs bogs',
         time: '08:00 AM',
         day: 'Mon',
+        location: 'Room 101',
         colorValue: 0xFF64B5F6, // Light Blue
       ),
       ClassBlock(
@@ -17,30 +19,25 @@ class ScheduleNotifier extends Notifier<List<ClassBlock>> {
         name: 'MRNL 202',
         time: '10:00 AM',
         day: 'Tue',
+        location: 'Lab A',
         colorValue: 0xFFFFB74D, // Orange
       ),
-      ClassBlock(
-        id: '3',
-        name: 'Physics 303',
-        time: '01:00 PM',
-        day: 'Wed',
-        colorValue: 0xFF81C784, // Green
-      ),
-      ClassBlock(
-        id: '4',
-        name: 'Chemistry 404',
-        time: '03:00 PM',
-        day: 'Thu',
-        colorValue: 0xFF9575CD, // Purple
-      ),
-      ClassBlock(
-        id: '5',
-        name: 'Art 505',
-        time: '11:00 AM',
-        day: 'Fri',
-        colorValue: 0xFFE57373, // Red
-      ),
     ];
+  }
+
+  void addClass(ClassBlock newClass) {
+    state = [...state, newClass];
+  }
+
+  void updateClass(ClassBlock updatedClass) {
+    state = [
+      for (final item in state)
+        if (item.id == updatedClass.id) updatedClass else item
+    ];
+  }
+
+  void deleteClass(String id) {
+    state = state.where((item) => item.id != id).toList();
   }
 }
 
