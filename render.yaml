@@ -1,0 +1,11 @@
+services:
+  - type: static
+    name: schedule-maker
+    env: static
+    rootDir: schedule_maker
+    buildCommand: git clone https://github.com/flutter/flutter.git -b stable && ./flutter/bin/flutter build web --release
+    publishPath: build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
