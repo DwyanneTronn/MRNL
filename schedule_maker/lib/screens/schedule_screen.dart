@@ -121,6 +121,13 @@ class ScheduleScreen extends ConsumerWidget {
                   final startDouble = startTime.hour + (startTime.minute / 60.0);
                   final endDouble = endTime.hour + (endTime.minute / 60.0);
                   
+                  if (endDouble <= startDouble) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('End time must be after start time')),
+                    );
+                    return;
+                  }
+
                   final newClass = ClassBlock(
                     id: isEditing ? classBlock.id : const Uuid().v4(),
                     name: nameController.text,
@@ -131,6 +138,22 @@ class ScheduleScreen extends ConsumerWidget {
                     startHour: startDouble,
                     endHour: endDouble,
                   );
+
+                  final conflict = ref.read(scheduleProvider.notifier).getConflictingClass(
+                    newClass, 
+                    ignoreId: isEditing ? classBlock.id : null,
+                  );
+
+                  if (conflict != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Conflict detected with ${conflict.name} (${conflict.time}) on ${conflict.day}'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
+
                   if (isEditing) {
                     ref.read(scheduleProvider.notifier).updateClass(newClass);
                   } else {

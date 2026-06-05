@@ -129,6 +129,20 @@ class ScheduleNotifier extends Notifier<List<ClassBlock>> {
     state = [...state, newClass];
   }
 
+  ClassBlock? getConflictingClass(ClassBlock newClass, {String? ignoreId}) {
+    for (final existing in state) {
+      if (ignoreId != null && existing.id == ignoreId) continue;
+      if (existing.day == newClass.day) {
+        // Overlap check: (start1 < end2) && (start2 < end1)
+        if (newClass.startHour < existing.endHour &&
+            existing.startHour < newClass.endHour) {
+          return existing;
+        }
+      }
+    }
+    return null;
+  }
+
   void updateClass(ClassBlock updatedClass) {
     state = [
       for (final item in state)
