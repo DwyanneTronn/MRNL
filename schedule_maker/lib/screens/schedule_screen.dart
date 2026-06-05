@@ -41,8 +41,8 @@ class ScheduleScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (statefulContext, setState) => AlertDialog(
           title: Text(isEditing ? 'Edit Class' : 'Add Class'),
           content: SingleChildScrollView(
             child: Column(
@@ -104,63 +104,74 @@ class ScheduleScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             if (isEditing)
               TextButton(
                 onPressed: () {
                   ref.read(scheduleProvider.notifier).deleteClass(classBlock.id);
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                 },
                 child: const Text('Delete', style: TextStyle(color: Colors.red)),
               ),
             ElevatedButton(
               onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  final startDouble = startTime.hour + (startTime.minute / 60.0);
-                  final endDouble = endTime.hour + (endTime.minute / 60.0);
-                  
-                  if (endDouble <= startDouble) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('End time must be after start time')),
-                    );
-                    return;
-                  }
-
-                  final newClass = ClassBlock(
-                    id: isEditing ? classBlock.id : const Uuid().v4(),
-                    name: nameController.text,
-                    time: '${startTime.format(context)} - ${endTime.format(context)}',
-                    day: dayController.text,
-                    location: locationController.text,
-                    colorValue: selectedColor,
-                    startHour: startDouble,
-                    endHour: endDouble,
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a class name'),
+                      backgroundColor: Colors.orange,
+                    ),
                   );
-
-                  final conflict = ref.read(scheduleProvider.notifier).getConflictingClass(
-                    newClass, 
-                    ignoreId: isEditing ? classBlock.id : null,
-                  );
-
-                  if (conflict != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Conflict detected with ${conflict.name} (${conflict.time}) on ${conflict.day}'),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    return;
-                  }
-
-                  if (isEditing) {
-                    ref.read(scheduleProvider.notifier).updateClass(newClass);
-                  } else {
-                    ref.read(scheduleProvider.notifier).addClass(newClass);
-                  }
-                  Navigator.pop(context);
+                  return;
                 }
+
+                final startDouble = startTime.hour + (startTime.minute / 60.0);
+                final endDouble = endTime.hour + (endTime.minute / 60.0);
+                
+                if (endDouble <= startDouble) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('End time must be after start time'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                final newClass = ClassBlock(
+                  id: isEditing ? classBlock.id : const Uuid().v4(),
+                  name: nameController.text.trim(),
+                  time: '${startTime.format(context)} - ${endTime.format(context)}',
+                  day: dayController.text,
+                  location: locationController.text,
+                  colorValue: selectedColor,
+                  startHour: startDouble,
+                  endHour: endDouble,
+                );
+
+                final conflict = ref.read(scheduleProvider.notifier).getConflictingClass(
+                  newClass, 
+                  ignoreId: isEditing ? classBlock.id : null,
+                );
+
+                if (conflict != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Conflict detected with ${conflict.name} (${conflict.time}) on ${conflict.day}'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                if (isEditing) {
+                  ref.read(scheduleProvider.notifier).updateClass(newClass);
+                } else {
+                  ref.read(scheduleProvider.notifier).addClass(newClass);
+                }
+                Navigator.pop(dialogContext);
               },
               child: Text(isEditing ? 'Save' : 'Add'),
             ),
