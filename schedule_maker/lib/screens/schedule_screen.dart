@@ -54,7 +54,7 @@ class ScheduleScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: dayController.text,
+                  initialValue: dayController.text,
                   decoration: const InputDecoration(labelText: 'Day'),
                   items: days.map((day) => DropdownMenuItem(value: day, child: Text(day))).toList(),
                   onChanged: (val) => setState(() => dayController.text = val!),
